@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScrollPopupComponent } from './scroll-popup/scroll-popup.component';
 import { ScrollPopupService } from './scroll-popup/scroll-popup.service';
@@ -27,7 +27,7 @@ import { TABLE_DATA, TableRow } from './mock-data/table-data';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   /**
    * Table data to be displayed
    *
@@ -38,4 +38,13 @@ export class AppComponent {
    * The data structure is defined by the TableRow interface from mock-data.
    */
   tableData = TABLE_DATA;
+  private scrollPopupService = inject(ScrollPopupService);
+
+  ngOnInit(): void {
+    // Set the initial date from the first row of table data
+    if (this.tableData.length > 0) {
+      const firstRowDate = this.tableData[0].date;
+      this.scrollPopupService.setInitialDate(firstRowDate);
+    }
+  }
 }
