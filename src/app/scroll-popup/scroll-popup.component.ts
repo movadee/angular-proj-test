@@ -57,7 +57,7 @@ import { ScrollPopupService } from './scroll-popup.service';
       border: 1px solid #e0e0e0;         /* Light border for definition */
 
       /* Simple, soft fade transition */
-      transition: opacity 0.5s ease-out;
+      transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
       /*
         Arrow pointing to the scrollbar (left side since popup is to the right)
