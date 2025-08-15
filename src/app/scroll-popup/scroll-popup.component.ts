@@ -55,6 +55,8 @@ import { ScrollPopupService } from './scroll-popup.service';
       z-index: 1000;                      /* High z-index to appear above other content */
       pointer-events: none;               /* Prevents popup from blocking interactions */
       border: 1px solid #e0e0e0;         /* Light border for definition */
+      width: 60px;                       /* Fixed width for consistent sizing */
+      text-align: center;                 /* Center text within fixed width */
 
       /* Simple, soft fade transition */
       transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
