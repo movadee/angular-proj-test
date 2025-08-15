@@ -1,0 +1,40 @@
+<div class="table-container">
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead class="sticky-header">
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Department</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of tableData; track item.id; let i = $index) {
+          <tr [attr.data-row-index]="i">
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.email }}</td>
+            <td>{{ item.department }}</td>
+            <td>{{ item.date }}</td>
+            <td>
+              <span class="status-badge" [class]="'status-' + item.status.toLowerCase()">
+                {{ item.status }}
+              </span>
+            </td>
+            <td>
+              <button class="action-btn edit">Edit</button>
+              <button class="action-btn delete">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Scroll popup component -->
+  <app-scroll-popup></app-scroll-popup>
+</div>
