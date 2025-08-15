@@ -1,40 +1,97 @@
+<!--
+  Main table container with scroll popup integration
+
+  This template displays a data table with the following features:
+  - Responsive table layout with sticky header
+  - Scrollable content area
+  - Status badges with dynamic styling
+  - Integrated scroll popup that appears during scrolling
+
+  The scroll popup is positioned outside the table container
+  to appear to the right of the scrollbar.
+-->
+
+<!--
+  Table Container
+  Contains the entire table structure and provides the scrollable area
+  for the scroll popup to track and position itself relative to.
+-->
 <div class="table-container">
+  <!--
+    Table Wrapper
+    This div creates the scrollable container for the table content.
+    The ScrollPopupService listens to scroll events on this element
+    to determine when to show/hide the popup and calculate positioning.
+  -->
   <div class="table-wrapper">
+    <!--
+      Data Table
+      Displays the tabular data with proper semantic structure.
+      Uses Angular's @for directive for efficient rendering of table rows.
+    -->
     <table class="data-table">
+      <!--
+        Sticky Header
+        The table header remains visible at the top while scrolling,
+        providing context for the data being viewed.
+      -->
       <thead class="sticky-header">
         <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Department</th>
-          <th>Date</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th>ID</th>           <!-- Unique identifier for each record -->
+          <th>Name</th>         <!-- Person's full name -->
+          <th>Email</th>        <!-- Contact email address -->
+          <th>Department</th>   <!-- Organizational department -->
+          <th>Date</th>         <!-- Associated date -->
+          <th>Status</th>       <!-- Current status indicator -->
         </tr>
       </thead>
+
+      <!--
+        Table Body
+        Contains the actual data rows, each representing a record
+        from the tableData array.
+      -->
       <tbody>
+        <!--
+          Dynamic Row Generation
+          Uses Angular's @for directive to efficiently render table rows.
+          Each row gets a unique data attribute for potential future enhancements.
+        -->
         @for (item of tableData; track item.id; let i = $index) {
           <tr [attr.data-row-index]="i">
-            <td>{{ item.id }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.email }}</td>
-            <td>{{ item.department }}</td>
-            <td>{{ item.date }}</td>
+            <td>{{ item.id }}</td>                    <!-- Display record ID -->
+            <td>{{ item.name }}</td>                  <!-- Display person's name -->
+            <td>{{ item.email }}</td>                 <!-- Display email address -->
+            <td>{{ item.department }}</td>            <!-- Display department -->
+            <td>{{ item.date }}</td>                  <!-- Display associated date -->
             <td>
+              <!--
+                Status Badge
+                Dynamic styling based on status value.
+                Uses CSS classes to apply different colors for different statuses.
+              -->
               <span class="status-badge" [class]="'status-' + item.status.toLowerCase()">
                 {{ item.status }}
               </span>
-            </td>
-            <td>
-              <button class="action-btn edit">Edit</button>
-              <button class="action-btn delete">Delete</button>
             </td>
           </tr>
         }
       </tbody>
     </table>
   </div>
-
-  <!-- Scroll popup component -->
-  <app-scroll-popup></app-scroll-popup>
 </div>
+
+<!--
+  Scroll Popup Component
+
+  This component is positioned outside the table container to appear
+  to the right of the scrollbar. It will:
+  - Show when the user starts scrolling in the table
+  - Position itself aligned with the scrollbar thumb
+  - Display month/year information (configurable)
+  - Automatically hide after scrolling stops
+
+  The component is self-contained and manages its own positioning
+  through the ScrollPopupService.
+-->
+<app-scroll-popup></app-scroll-popup>

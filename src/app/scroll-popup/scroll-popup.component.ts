@@ -2,59 +2,93 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScrollPopupService } from './scroll-popup.service';
 
+/**
+ * Scroll Popup Component
+ *
+ * This component displays a popup that appears when the user scrolls in a table.
+ * The popup is positioned to the right of the table's scrollbar and follows
+ * the scrollbar thumb position as the user scrolls.
+ *
+ * Features:
+ * - Shows/hides based on scroll activity
+ * - Positions itself relative to the scrollbar
+ * - Displays month/year information (configurable)
+ * - Automatically hides after scrolling stops
+ * - Non-intrusive (pointer-events: none)
+ * - Soft fade in/out transitions
+ */
 @Component({
   selector: 'app-scroll-popup',
   standalone: true,
   imports: [CommonModule],
   template: `
+    <!--
+      Popup container that appears when scrolling
+      Uses Angular signals for reactive positioning and visibility
+      Simple fade transitions for smooth appearance/disappearance
+    -->
     <div
       *ngIf="scrollPopupService.isVisible()"
       class="scroll-popup"
       [style.top.px]="scrollPopupService.top()"
+      [style.left.px]="scrollPopupService.left()"
     >
+      <!-- Display the month and year text from the service -->
       {{ scrollPopupService.monthYear() }}
     </div>
   `,
   styles: [`
+    /*
+      Main popup container styling
+      Uses fixed positioning to appear outside the table boundaries
+      Simple fade transitions for smooth appearance/disappearance
+    */
     .scroll-popup {
-      position: absolute;
-      right: 20px;
-      background: white;
-      color: #333;
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      z-index: 1000;
-      pointer-events: none;
-      border: 1px solid #e0e0e0;
-      transition: opacity 0.2s ease-in-out;
+      position: fixed;                    /* Position relative to viewport, not parent */
+      background: white;                  /* Clean white background for readability */
+      color: #333;                        /* Dark text for good contrast */
+      padding: 8px 12px;                  /* Comfortable internal spacing */
+      border-radius: 6px;                 /* Rounded corners for modern look */
+      font-size: 14px;                    /* Readable font size */
+      font-weight: 500;                   /* Medium weight for emphasis */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+      z-index: 1000;                      /* High z-index to appear above other content */
+      pointer-events: none;               /* Prevents popup from blocking interactions */
+      border: 1px solid #e0e0e0;         /* Light border for definition */
 
-      /* Arrow pointing to scrollbar */
+      /* Simple, soft fade transition */
+      transition: opacity 0.5s ease-out;
+
+      /*
+        Arrow pointing to the scrollbar (left side since popup is to the right)
+        Creates a visual connection between popup and scrollbar
+      */
       &::after {
         content: '';
         position: absolute;
-        right: -6px;
-        top: 50%;
-        transform: translateY(-50%);
+        left: -6px;                       /* Position arrow to the left of popup */
+        top: 50%;                         /* Center arrow vertically */
+        transform: translateY(-50%);       /* Perfect vertical centering */
         width: 0;
         height: 0;
-        border-left: 6px solid white;
+        border-right: 6px solid white;    /* White arrow pointing left */
         border-top: 6px solid transparent;
         border-bottom: 6px solid transparent;
       }
 
-      /* Arrow border to make it visible */
+      /*
+        Arrow border outline for better visibility
+        Creates a subtle outline around the white arrow
+      */
       &::before {
         content: '';
         position: absolute;
-        right: -7px;
-        top: 50%;
-        transform: translateY(-50%);
+        left: -7px;                       /* Slightly larger than the white arrow */
+        top: 50%;                         /* Center vertically */
+        transform: translateY(-50%);       /* Perfect vertical centering */
         width: 0;
         height: 0;
-        border-left: 7px solid #e0e0e0;
+        border-right: 7px solid #e0e0e0; /* Light gray outline */
         border-top: 7px solid transparent;
         border-bottom: 7px solid transparent;
       }
@@ -62,8 +96,16 @@ import { ScrollPopupService } from './scroll-popup.service';
   `]
 })
 export class ScrollPopupComponent implements OnDestroy {
+  /**
+   * Inject the scroll popup service
+   * This service handles all the scroll logic, positioning, and state management
+   */
   protected readonly scrollPopupService = inject(ScrollPopupService);
 
+  /**
+   * Lifecycle hook called when component is destroyed
+   * Ensures proper cleanup of service resources to prevent memory leaks
+   */
   ngOnDestroy(): void {
     this.scrollPopupService.cleanup();
   }
