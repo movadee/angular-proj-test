@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScrollPopupComponent } from './scroll-popup/scroll-popup.component';
 import { ScrollPopupService } from './scroll-popup/scroll-popup.service';
@@ -27,7 +27,7 @@ import { TABLE_DATA, TableRow } from './mock-data/table-data';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   /**
    * Table data to be displayed
    *
@@ -46,5 +46,10 @@ export class AppComponent implements OnInit {
       const firstRowDate = this.tableData[0].date;
       this.scrollPopupService.setInitialDate(firstRowDate);
     }
+  }
+
+  ngAfterViewInit(): void {
+    // Initialize the scroll popup service once the view (DOM) is ready
+    this.scrollPopupService.initialize();
   }
 }

@@ -57,17 +57,18 @@ export class ScrollPopupService implements OnDestroy {
   // Compiled regex for better performance (compile once, reuse many times)
   private readonly dateRegex = /^(\d{4})-(\d{2})-\d{2}$/;
 
-  constructor() {
-    // Delay initialization to ensure DOM elements are available
-    // This prevents errors when trying to access elements before they're rendered
-    setTimeout(() => this.initialize(), 100);
-  }
+  // Keep a stable bound handler so add/removeEventListener can match
+  private boundScrollHandler: (e: Event) => void = this.handleScroll.bind(this);
+
+  // Empty constructor — initialization is triggered from component lifecycle
+  constructor() {}
 
   /**
    * Initializes the service by setting up DOM element references and scroll listener
-   * This method is called once after the DOM is ready to cache all necessary elements
+   * This must be called once the component DOM is rendered (e.g., ngAfterViewInit)
    */
-  private initialize(): void {
+  public initialize(): void {
+    if (this.isInitialized) return;
     this.cacheDOMElements();
     this.setupScrollListener();
     this.isInitialized = true;
@@ -93,10 +94,10 @@ export class ScrollPopupService implements OnDestroy {
    */
   private setupScrollListener(): void {
     if (this.tableWrapper) {
-      this.tableWrapper.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+      this.tableWrapper.addEventListener('scroll', this.boundScrollHandler, { passive: true });
     } else if (typeof window !== 'undefined') {
       // Fallback to window scroll if table wrapper isn't found
-      window.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+      window.addEventListener('scroll', this.boundScrollHandler, { passive: true });
     }
   }
 
@@ -264,20 +265,12 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Extracts month and year from a table row
-   *
-   * This method looks for the date cell (5th column) in the given row
-   * and extracts the month/year information from it.
-   *
-   * @param row - The table row element to extract date from
-   * @returns Formatted month/year string or null if extraction fails
    */
   private extractMonthYearFromRow(row: Element): string | null {
-    // Find the date cell (5th column) in the row
     const dateCell = row.querySelector('td:nth-child(5)');
     if (!dateCell) return null;
 
-    // Extract and clean the date text
-    const dateText = dateCell.textContent?.trim();
+    const dateText = (dateCell as HTMLElement).textContent?.trim();
     if (!dateText) return null;
 
     return this.extractMonthYearFromText(dateText);
@@ -285,23 +278,15 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Extracts month and year from date text using optimized regex
-   *
-   * This method expects YYYY-MM-DD format and returns abbreviated month names.
-   * The regex is compiled once and reused for better performance.
-   *
-   * @param dateText - The date text in YYYY-MM-DD format
-   * @returns Formatted month/year string (e.g., "Sep 2024") or null if invalid
    */
   private extractMonthYearFromText(dateText: string): string | null {
     // Use compiled regex for better performance
     const match = this.dateRegex.exec(dateText);
     if (!match) return null;
 
-    // Extract year and month number from regex match
     const year = match[1];
     const monthNum = parseInt(match[2], 10); // Base 10 for better performance
 
-    // Convert month number to abbreviated name and format result
     if (monthNum >= 1 && monthNum <= 12) {
       return `${this.months[monthNum]} ${year}`;
     }
@@ -311,11 +296,7 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Sets the initial date from the first row of table data
-   *
-   * This method is called by the component when it has access to the table data.
-   * It sets the initial month/year display that the popup shows when first loaded.
-   *
-   * @param dateText - The date text from the first table row
+   * Called by the component when it has access to the table data
    */
   setInitialDate(dateText: string): void {
     const monthYear = this.extractMonthYearFromText(dateText);
@@ -326,37 +307,27 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Calculates and updates the popup position with optimized calculations
-   *
-   * This method:
-   * - Calculates where the scrollbar thumb is positioned
-   * - Positions the popup to the right of the table, aligned with the thumb
-   * - Ensures the popup stays within the viewport bounds
-   * - Uses viewport coordinates since the popup has position: fixed
-   * - Updates the month/year to reflect the currently visible row
-   * - Uses cached DOM elements for better performance
    */
   private updatePosition(): void {
-    if (!this.tableWrapper || !this.tableContainer) return;
+    if (!this.isInitialized || !this.tableWrapper || !this.tableContainer) return;
 
-    // Get scroll metrics for position calculations
-    const scrollTop = this.tableWrapper.scrollTop;
-    const scrollHeight = this.tableWrapper.scrollHeight;
-    const containerHeight = this.tableWrapper.clientHeight;
+    const scrollTop = (this.tableWrapper as any).scrollTop;
+    const scrollHeight = (this.tableWrapper as any).scrollHeight;
+    const containerHeight = (this.tableWrapper as any).clientHeight;
     const popupHeight = 40;
 
-    // Calculate scrollbar thumb position using scroll ratio
+    // Optimized scrollbar thumb position calculation
     // Math.max prevents division by zero and improves calculation reliability
     const scrollRatio = scrollTop / Math.max(scrollHeight - containerHeight, 1);
     const scrollbarThumbTop = scrollRatio * (containerHeight - 20);
 
-    // Get table position and calculate popup coordinates
     const tableRect = this.tableContainer.getBoundingClientRect();
 
-    // Position popup to the right of the scrollbar, aligned with thumb
+    // Position calculations - popup positioned to the right of the scrollbar
     let left = tableRect.right + 10;
     let top = tableRect.top + scrollbarThumbTop - 10;
 
-    // Apply boundary constraints to keep popup within viewport
+    // Boundary checks to ensure popup stays within viewport
     if (top + popupHeight > window.innerHeight) {
       top = window.innerHeight - popupHeight - 20;
     }
@@ -364,7 +335,6 @@ export class ScrollPopupService implements OnDestroy {
       top = 20;
     }
 
-    // Update position signals
     this._top.set(top);
     this._left.set(left);
 
@@ -379,29 +349,23 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Cleans up event listeners and timers
-   *
-   * This method is called when the service is destroyed to prevent memory leaks.
-   * It removes all event listeners and clears any pending timeouts.
    */
   cleanup(): void {
-    // Clear the scroll timeout
     if (this.scrollTimeout) {
       clearTimeout(this.scrollTimeout);
     }
 
-    // Remove event listeners to prevent memory leaks
     if (this.tableWrapper) {
-      this.tableWrapper.removeEventListener('scroll', this.handleScroll.bind(this));
+      this.tableWrapper.removeEventListener('scroll', this.boundScrollHandler as any);
     }
 
     if (typeof window !== 'undefined') {
-      window.removeEventListener('scroll', this.handleScroll.bind(this));
+      window.removeEventListener('scroll', this.boundScrollHandler as any);
     }
   }
 
   /**
    * Lifecycle hook called when the service is destroyed
-   * Ensures proper cleanup of resources to prevent memory leaks
    */
   ngOnDestroy(): void {
     this.cleanup();

@@ -91,7 +91,7 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 		it('caches DOM and attaches scroll listener', () => {
 			expect(document.querySelector).toHaveBeenCalledWith('.table-wrapper');
-			expect(mockTableWrapper.addEventListener).toHaveBeenCalledWith('scroll', expect.any(Function), { passive: true });
+			expect(mockTableWrapper.addEventListener).toHaveBeenCalledWith('scroll', jasmine.any(Function), { passive: true });
 		});
 
 		it('handles missing DOM elements gracefully', () => {
@@ -420,7 +420,7 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 		it('removes listeners and clears timers', () => {
 			const clearSpy = jest.spyOn(window, 'clearTimeout');
 			service.cleanup();
-			expect(mockTableWrapper.removeEventListener).toHaveBeenCalledWith('scroll', expect.any(Function));
+			expect(mockTableWrapper.removeEventListener).toHaveBeenCalledWith('scroll', jasmine.any(Function));
 			expect(clearSpy).toHaveBeenCalled();
 		});
 
