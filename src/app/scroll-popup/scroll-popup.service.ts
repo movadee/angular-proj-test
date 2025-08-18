@@ -50,12 +50,9 @@ export class ScrollPopupService implements OnDestroy {
   private rows: Element[] = [];                   // Cached array of table row elements
   private isInitialized = false;                  // Flag to ensure proper initialization
 
-  // Month abbreviations array (index 0 is unused, months are 1-12)
-  // This is readonly since it never changes and improves performance
-  private readonly months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
   // Compiled regex for better performance (compile once, reuse many times)
-  private readonly dateRegex = /^(\d{4})-(\d{2})-\d{2}$/;
+  // Updated to handle "Dec 29, 2025" or "Jan 1, 2023" format
+  private readonly dateRegex = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Fév|Avr|Juin|Juil|Août|Déc)\s+(\d{1,2}),\s+(\d{4})$/;
 
   // Keep a stable bound handler so add/removeEventListener can match
   private boundScrollHandler: (e: Event) => void = this.handleScroll.bind(this);
@@ -277,20 +274,25 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Extracts month and year from date text using optimized regex
+   * Handles "Dec 29, 2025" or "Jan 1, 2023" format
+   * Simply removes day and comma, keeping month and year as-is
    */
   private extractMonthYearFromText(dateText: string): string | null {
     // Use compiled regex for better performance
     const match = this.dateRegex.exec(dateText);
     if (!match) return null;
 
-    const year = match[1];
-    const monthNum = parseInt(match[2], 10); // Base 10 for better performance
+    const monthName = match[1];
+    const day = parseInt(match[2], 10); // Base 10 for better performance
+    const year = parseInt(match[3], 10); // Base 10 for better performance
 
-    if (monthNum >= 1 && monthNum <= 12) {
-      return `${this.months[monthNum]} ${year}`;
+    // Validate the parsed values
+    if (day < 1 || day > 31 || year < 1000 || year > 9999) {
+      return null;
     }
 
-    return null;
+    // Simply return month name + year, removing day and comma
+    return `${monthName} ${year}`;
   }
 
   /**
