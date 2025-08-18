@@ -80,7 +80,6 @@ export class ScrollPopupService implements OnDestroy {
    */
   private cacheDOMElements(): void {
     this.tableWrapper = document.querySelector('.table-wrapper');
-    this.tableContainer = document.querySelector('.table-container');
     this.tableBody = document.querySelector('.data-table tbody');
 
     if (this.tableBody) {
@@ -309,7 +308,7 @@ export class ScrollPopupService implements OnDestroy {
    * Calculates and updates the popup position with optimized calculations
    */
   private updatePosition(): void {
-    if (!this.isInitialized || !this.tableWrapper || !this.tableContainer) return;
+    if (!this.isInitialized || !this.tableWrapper) return;
 
     const scrollTop = (this.tableWrapper as any).scrollTop;
     const scrollHeight = (this.tableWrapper as any).scrollHeight;
@@ -321,11 +320,11 @@ export class ScrollPopupService implements OnDestroy {
     const scrollRatio = scrollTop / Math.max(scrollHeight - containerHeight, 1);
     const scrollbarThumbTop = scrollRatio * (containerHeight - 20);
 
-    const tableRect = this.tableContainer.getBoundingClientRect();
+    const wrapperRect = this.tableWrapper.getBoundingClientRect();
 
     // Position calculations - popup positioned to the right of the scrollbar
-    let left = tableRect.right + 10;
-    let top = tableRect.top + scrollbarThumbTop - 10;
+    let left = wrapperRect.right + 10;
+    let top = wrapperRect.top + scrollbarThumbTop - 10;
 
     // Boundary checks to ensure popup stays within viewport
     if (top + popupHeight > window.innerHeight) {

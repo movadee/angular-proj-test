@@ -11,9 +11,14 @@
 }
 
 .table-wrapper {
-  height: 100%;
+  width: 1200px;
+  height: 500px;
+  margin: 2rem auto;
   overflow-y: auto;
   position: relative;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: white;
 }
 
 .data-table {
