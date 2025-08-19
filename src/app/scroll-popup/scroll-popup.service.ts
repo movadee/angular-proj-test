@@ -42,6 +42,9 @@ export class ScrollPopupService implements OnDestroy {
   private lastMonthUpdateTime = 0;                // Timestamp of last month/year update
   private readonly monthUpdateThrottle = 100;     // Minimum ms between month/year updates
 
+  // Scrollbar configuration
+  private scrollbarButtonHeight = 17;             // Height of scrollbar buttons (up/down arrows)
+
   // Cached DOM elements for better performance
   // These are cached once during initialization to avoid repeated DOM queries
   private tableWrapper: Element | null = null;    // The scrollable table container
@@ -314,6 +317,7 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Calculates and updates the popup position with optimized calculations
+   * Accounts for scrollbar buttons that may appear at top/bottom of scrollbar
    */
   private updatePosition(): void {
     if (!this.isInitialized || !this.tableWrapper) return;
@@ -323,10 +327,20 @@ export class ScrollPopupService implements OnDestroy {
     const containerHeight = (this.tableWrapper as any).clientHeight;
     const popupHeight = 40;
 
+    // Account for scrollbar buttons that appear at top/bottom
+    // These buttons typically take up about 17px each (34px total)
+    // Set to 0 if your project doesn't have scrollbar buttons
+    const totalButtonHeight = this.scrollbarButtonHeight * 2; // Top + bottom buttons
+
     // Optimized scrollbar thumb position calculation
     // Math.max prevents division by zero and improves calculation reliability
     const scrollRatio = scrollTop / Math.max(scrollHeight - containerHeight, 1);
-    const scrollbarThumbTop = scrollRatio * (containerHeight - 20);
+
+    // Calculate available scrollbar track height (excluding buttons)
+    const availableTrackHeight = containerHeight - totalButtonHeight;
+
+    // Position popup relative to scrollbar thumb, accounting for top button height
+    const scrollbarThumbTop = this.scrollbarButtonHeight + (scrollRatio * availableTrackHeight);
 
     const wrapperRect = this.tableWrapper.getBoundingClientRect();
 
@@ -352,6 +366,15 @@ export class ScrollPopupService implements OnDestroy {
       this.updateMonthYear();
       this.lastMonthUpdateTime = now;
     }
+  }
+
+  /**
+   * Sets the height of the scrollbar buttons.
+   * This can be used to adjust the height for different projects.
+   * @param height - The height in pixels.
+   */
+  setScrollbarButtonHeight(height: number): void {
+    this.scrollbarButtonHeight = height;
   }
 
   /**
