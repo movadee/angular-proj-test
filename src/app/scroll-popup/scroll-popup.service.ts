@@ -188,30 +188,39 @@ export class ScrollPopupService implements OnDestroy {
    * elements and optimized algorithms for better performance.
    */
   private updateMonthYear(): void {
+    // Early exit if service isn't ready or DOM elements aren't available
     if (!this.isInitialized || !this.tableWrapper || !this.tableBody) {
       this._monthYear.set('');
       return;
     }
 
-    // Refresh rows if needed (in case table content changed dynamically)
+    // Refresh the cached rows array if it's empty (e.g., after table filtering or content changes)
+    // This handles cases where the table data is dynamically updated, not regular scrolling
     if (this.rows.length === 0) {
       this.rows = Array.from(this.tableBody!.querySelectorAll('tr'));
     }
 
+    // If no rows found, clear the month/year display
     if (this.rows.length === 0) {
       this._monthYear.set('');
       return;
     }
 
+    // Find the first row that's currently visible in the viewport
+    // This uses binary search for O(log n) performance since data is sorted
     const firstVisibleRow = this.findFirstVisibleRow();
+
     if (firstVisibleRow) {
+      // Extract the month/year from the date column of the first visible row
       const monthYear = this.extractMonthYearFromRow(firstVisibleRow);
       if (monthYear) {
+        // Update the popup display with the extracted month/year
         this._monthYear.set(monthYear);
         return;
       }
     }
 
+    // Fallback: clear the month/year if we couldn't extract a valid date
     this._monthYear.set('');
   }
 
