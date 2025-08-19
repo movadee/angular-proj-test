@@ -40,7 +40,7 @@ export class ScrollPopupService implements OnDestroy {
   private lastScrollTime = 0;                     // Timestamp of last scroll event
   private readonly hideDelay = 1200;              // Milliseconds to wait before hiding popup
   private lastMonthUpdateTime = 0;                // Timestamp of last month/year update
-  private readonly monthUpdateThrottle = 100;     // Minimum ms between month/year updates
+  private readonly monthUpdateThrottle = 50;      // Reduced from 100ms to 50ms for better responsiveness
 
   // Scrollbar configuration
   private scrollbarButtonHeight = 17;             // Height of scrollbar buttons (up/down arrows)
@@ -108,6 +108,7 @@ export class ScrollPopupService implements OnDestroy {
    *
    * This method:
    * - Shows the popup immediately when scrolling starts
+   * - Updates month/year immediately on first scroll
    * - Resets the hide timer on each scroll event
    * - Schedules the popup to hide after scrolling stops
    *
@@ -117,7 +118,16 @@ export class ScrollPopupService implements OnDestroy {
     const now = Date.now();
     this.lastScrollTime = now;
 
+    // Show popup immediately and update position
     this.showPopup();
+
+    // Update month/year immediately on first scroll or if enough time has passed
+    if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
+      this.updateMonthYear();
+      this.lastMonthUpdateTime = now;
+    }
+
+    // Schedule hide after scrolling stops
     this.scheduleHidePopup();
   }
 
@@ -138,13 +148,20 @@ export class ScrollPopupService implements OnDestroy {
   }
 
   /**
-   * Shows the popup and updates its content and position
+   * Shows the popup and updates its content and position immediately
    * Called whenever scrolling starts
    */
   private showPopup(): void {
     this._isVisible.set(true);
-    this.updateMonthYear();
+
+    // Update position and month/year immediately for instant response
     this.updatePosition();
+
+    // Also update month/year directly if not already done in handleScroll
+    if (Date.now() - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
+      this.updateMonthYear();
+      this.lastMonthUpdateTime = Date.now();
+    }
   }
 
   /**
@@ -358,14 +375,6 @@ export class ScrollPopupService implements OnDestroy {
 
     this._top.set(top);
     this._left.set(left);
-
-    // Throttled month/year updates to prevent excessive processing
-    // This improves performance during fast scrolling
-    const now = Date.now();
-    if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
-      this.updateMonthYear();
-      this.lastMonthUpdateTime = now;
-    }
   }
 
   /**
