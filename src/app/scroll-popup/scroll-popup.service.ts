@@ -42,6 +42,7 @@ export class ScrollPopupService implements OnDestroy {
   private readonly hideDelay = 1200;              // Milliseconds to wait before hiding popup
   private lastMonthUpdateTime = 0;                // Timestamp of last month/year update
   private readonly monthUpdateThrottle = 50;      // Reduced from 100ms to 50ms for better responsiveness
+  private firstScrollPrimed = false;              // Ensures first scroll shows popup reliably
 
   // Scrollbar configuration
   private scrollbarButtonHeight = 17;             // Height of scrollbar buttons (up/down arrows)
@@ -65,7 +66,7 @@ export class ScrollPopupService implements OnDestroy {
   private boundScrollHandler: (e: Event) => void = this.handleScroll.bind(this);
 
   // Empty constructor — initialization is triggered from component lifecycle
-  constructor(private ngZone: NgZone) {}
+  constructor() {}
 
   /**
    * Initializes the service by setting up DOM element references and scroll listener
@@ -116,22 +117,26 @@ export class ScrollPopupService implements OnDestroy {
    * @param event - The scroll event object
    */
   private handleScroll(event: Event): void {
-    this.ngZone.run(() => {
-      const now = Date.now();
-      this.lastScrollTime = now;
+    const now = Date.now();
+    this.lastScrollTime = now;
 
-      // Show popup immediately and update position
-      this.showPopup();
+    // Show popup immediately
+    this.showPopup();
 
-      // Update month/year immediately on first scroll or if enough time has passed
-      if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
-        this.updateMonthYear();
-        this.lastMonthUpdateTime = now;
-      }
+    // Ensure first scroll paints with updated scrollTop
+    if (!this.firstScrollPrimed) {
+      this.firstScrollPrimed = true;
+      requestAnimationFrame(() => this.updatePosition());
+    }
 
-      // Schedule hide after scrolling stops
-      this.scheduleHidePopup();
-    });
+    // Update month/year immediately on first scroll or if enough time has passed
+    if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
+      this.updateMonthYear();
+      this.lastMonthUpdateTime = now;
+    }
+
+    // Schedule hide after scrolling stops
+    this.scheduleHidePopup();
   }
 
   /**
@@ -145,7 +150,7 @@ export class ScrollPopupService implements OnDestroy {
 
     this.scrollTimeout = setTimeout(() => {
       if (Date.now() - this.lastScrollTime >= this.hideDelay) {
-        this.ngZone.run(() => this.hidePopup());
+        this.hidePopup();
       }
     }, this.hideDelay);
   }
@@ -157,8 +162,9 @@ export class ScrollPopupService implements OnDestroy {
   private showPopup(): void {
     this._isVisible.set(true);
 
-    // Update position and month/year immediately for instant response
+    // Update position immediately and again next frame to capture latest scroll
     this.updatePosition();
+    requestAnimationFrame(() => this.updatePosition());
 
     // Also update month/year directly if not already done in handleScroll
     const now = Date.now();
@@ -351,6 +357,7 @@ export class ScrollPopupService implements OnDestroy {
     const scrollHeight = el.scrollHeight ?? document.documentElement.scrollHeight ?? 0;
     const containerHeight = el.clientHeight ?? window.innerHeight;
     const popupHeight = 40;
+    const popupWidth = 60; // matches CSS fixed width
 
     // Available track height excluding up/down buttons
     const totalButtonHeight = this.scrollbarButtonHeight * 2;
@@ -371,14 +378,21 @@ export class ScrollPopupService implements OnDestroy {
     // Compute rect: use wrapper rect if available; otherwise align to viewport right/top
     let rectTop = 0;
     let rectRight = window.innerWidth;
-    if (this.tableWrapper) {
+    const hasWrapper = !!this.tableWrapper;
+    if (hasWrapper) {
       const wrapperRect = (this.tableWrapper as HTMLElement).getBoundingClientRect();
       rectTop = wrapperRect.top;
       rectRight = (wrapperRect as any).right;
     }
 
     // Position popup to the right, vertically centered to the thumb
-    let left = rectRight + 10;
+    let left: number;
+    if (hasWrapper) {
+      left = rectRight + 10;
+    } else {
+      // Fallback: keep popup on-screen at the viewport right edge
+      left = window.innerWidth - popupWidth - 10;
+    }
     let top = rectTop + thumbCenter - (popupHeight / 2);
 
     // Boundary checks to ensure popup stays within viewport
@@ -417,6 +431,9 @@ export class ScrollPopupService implements OnDestroy {
     if (typeof window !== 'undefined') {
       window.removeEventListener('scroll', this.boundScrollHandler as any);
     }
+
+    // Allow re-initialization behavior
+    this.firstScrollPrimed = false;
   }
 
   /**
