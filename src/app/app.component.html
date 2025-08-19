@@ -56,7 +56,12 @@
           <td>{{ item.name }}</td>
           <td>{{ item.email }}</td>
           <td>{{ item.department }}</td>
-          <td>{{ item.date }}</td>
+          <!--
+            Date Column with data-date attribute
+            The ScrollPopupService reads this attribute to get the date value
+            for positioning the popup based on the first visible row's date.
+          -->
+          <td [attr.data-date]="item.date">{{ item.date }}</td>
           <td>
             <!--
               Status Badge

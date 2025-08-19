@@ -264,12 +264,20 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Extracts month and year from a table row
+   * First tries to get date from data-date attribute, falls back to textContent
    */
   private extractMonthYearFromRow(row: Element): string | null {
     const dateCell = row.querySelector('td:nth-child(5)');
     if (!dateCell) return null;
 
-    const dateText = (dateCell as HTMLElement).textContent?.trim();
+    // First try to get date from data-date attribute
+    let dateText = (dateCell as HTMLElement).getAttribute('data-date') || null;
+
+    // If no data-date attribute, fall back to textContent
+    if (!dateText) {
+      dateText = (dateCell as HTMLElement).textContent?.trim() || null;
+    }
+
     if (!dateText) return null;
 
     return this.extractMonthYearFromText(dateText);
