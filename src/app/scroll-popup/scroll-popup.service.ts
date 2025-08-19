@@ -44,7 +44,6 @@ export class ScrollPopupService implements OnDestroy {
 
   // Scrollbar configuration
   private scrollbarButtonHeight = 17;             // Height of scrollbar buttons (up/down arrows)
-  private minScrollbarThumbPx = 20;               // Minimum thumb height approximation (varies by browser)
 
   // Cached DOM elements for better performance
   // These are cached once during initialization to avoid repeated DOM queries
@@ -335,8 +334,8 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Calculates and updates the popup position with optimized calculations
-   * Accounts for scrollbar buttons that may appear at top/bottom of scrollbar
-   * Aligns popup to the scrollbar thumb CENTER to avoid drift across scroll
+   * Accounts for scrollbar buttons at top/bottom by subtracting their height
+   * Aligns popup to the scrollbar thumb center using correct travel distance
    */
   private updatePosition(): void {
     if (!this.isInitialized || !this.tableWrapper) return;
@@ -346,19 +345,20 @@ export class ScrollPopupService implements OnDestroy {
     const containerHeight = (this.tableWrapper as any).clientHeight;
     const popupHeight = 40;
 
-    // Compute available track excluding optional buttons
+    // Available track height excluding up/down buttons
     const totalButtonHeight = this.scrollbarButtonHeight * 2;
-    const availableTrackHeight = Math.max(containerHeight - totalButtonHeight, 1);
+    const trackHeight = Math.max(containerHeight - totalButtonHeight, 1);
 
-    // Ratio of how far we've scrolled within content
-    const scrollRatio = scrollTop / Math.max(scrollHeight - containerHeight, 1);
+    // Ratio scrolled through the content
+    const scrollableContent = Math.max(scrollHeight - containerHeight, 1);
+    const scrollRatio = scrollTop / scrollableContent;
 
-    // Approximate scrollbar thumb height and travel distance for its TOP edge
-    const approxThumbHeight = Math.max((containerHeight / Math.max(scrollHeight, 1)) * availableTrackHeight, this.minScrollbarThumbPx);
-    const thumbTravelHeight = Math.max(availableTrackHeight - approxThumbHeight, 1);
+    // Approximate thumb height and correct travel distance for thumb top
+    const approxThumbHeight = Math.max((containerHeight / Math.max(scrollHeight, 1)) * trackHeight, 8);
+    const thumbTravel = Math.max(trackHeight - approxThumbHeight, 1);
 
-    // Position of the top of the thumb along the track, then center of thumb
-    const thumbTop = this.scrollbarButtonHeight + (scrollRatio * thumbTravelHeight);
+    // Compute thumb center along the track
+    const thumbTop = this.scrollbarButtonHeight + (scrollRatio * thumbTravel);
     const thumbCenter = thumbTop + (approxThumbHeight / 2);
 
     const wrapperRect = this.tableWrapper.getBoundingClientRect();
@@ -386,14 +386,6 @@ export class ScrollPopupService implements OnDestroy {
    */
   setScrollbarButtonHeight(height: number): void {
     this.scrollbarButtonHeight = Math.max(height, 0);
-  }
-
-  /**
-   * Sets the minimum scrollbar thumb height approximation (in px).
-   * Adjust if your browser/theme renders very small or very large thumbs.
-   */
-  setMinScrollbarThumbPx(px: number): void {
-    this.minScrollbarThumbPx = Math.max(px, 1);
   }
 
   /**
