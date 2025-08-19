@@ -1,4 +1,5 @@
 import { Injectable, signal, computed, OnDestroy } from '@angular/core';
+import { NgZone } from '@angular/core';
 
 /**
  * Interface defining the state of the scroll popup
@@ -64,7 +65,7 @@ export class ScrollPopupService implements OnDestroy {
   private boundScrollHandler: (e: Event) => void = this.handleScroll.bind(this);
 
   // Empty constructor — initialization is triggered from component lifecycle
-  constructor() {}
+  constructor(private ngZone: NgZone) {}
 
   /**
    * Initializes the service by setting up DOM element references and scroll listener
@@ -115,20 +116,22 @@ export class ScrollPopupService implements OnDestroy {
    * @param event - The scroll event object
    */
   private handleScroll(event: Event): void {
-    const now = Date.now();
-    this.lastScrollTime = now;
+    this.ngZone.run(() => {
+      const now = Date.now();
+      this.lastScrollTime = now;
 
-    // Show popup immediately and update position
-    this.showPopup();
+      // Show popup immediately and update position
+      this.showPopup();
 
-    // Update month/year immediately on first scroll or if enough time has passed
-    if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
-      this.updateMonthYear();
-      this.lastMonthUpdateTime = now;
-    }
+      // Update month/year immediately on first scroll or if enough time has passed
+      if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
+        this.updateMonthYear();
+        this.lastMonthUpdateTime = now;
+      }
 
-    // Schedule hide after scrolling stops
-    this.scheduleHidePopup();
+      // Schedule hide after scrolling stops
+      this.scheduleHidePopup();
+    });
   }
 
   /**
@@ -142,7 +145,7 @@ export class ScrollPopupService implements OnDestroy {
 
     this.scrollTimeout = setTimeout(() => {
       if (Date.now() - this.lastScrollTime >= this.hideDelay) {
-        this.hidePopup();
+        this.ngZone.run(() => this.hidePopup());
       }
     }, this.hideDelay);
   }
@@ -158,9 +161,10 @@ export class ScrollPopupService implements OnDestroy {
     this.updatePosition();
 
     // Also update month/year directly if not already done in handleScroll
-    if (Date.now() - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
+    const now = Date.now();
+    if (now - this.lastMonthUpdateTime >= this.monthUpdateThrottle) {
       this.updateMonthYear();
-      this.lastMonthUpdateTime = Date.now();
+      this.lastMonthUpdateTime = now;
     }
   }
 
