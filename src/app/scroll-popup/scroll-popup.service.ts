@@ -41,7 +41,7 @@ export class ScrollPopupService implements OnDestroy {
   private lastScrollTime = 0;                     // Timestamp of last scroll event
   private readonly hideDelay = 1200;              // Milliseconds to wait before hiding popup
   private lastMonthUpdateTime = 0;                // Timestamp of last month/year update
-  private readonly monthUpdateThrottle = 50;      // Reduced from 100ms to 50ms for better responsiveness
+  private readonly monthUpdateThrottle = 50;      // Minimum ms between month/year updates for performance
   private firstScrollPrimed = false;              // Ensures first scroll shows popup reliably
 
   // Scrollbar configuration
@@ -50,7 +50,6 @@ export class ScrollPopupService implements OnDestroy {
   // Cached DOM elements for better performance
   // These are cached once during initialization to avoid repeated DOM queries
   private tableWrapper: Element | null = null;    // The scrollable table container
-  private tableContainer: Element | null = null;  // The main table container for positioning
   private tableBody: Element | null = null;       // The table body containing all rows
   private rows: Element[] = [];                   // Cached array of table row elements
   private isInitialized = false;                  // Flag to ensure proper initialization
@@ -59,11 +58,10 @@ export class ScrollPopupService implements OnDestroy {
   // This is readonly since it never changes and improves performance
   private readonly months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  // Compiled regex for better performance (compile once, reuse many times)
-  private readonly dateRegex = /^(\d{4})-(\d{2})-\d{2}$/;
-
-  // Keep a stable bound handler so add/removeEventListener can match
-  private boundScrollHandler: (e: Event) => void = this.handleScroll.bind(this);
+  // Compiled regex for parsing date format "2025-12-29" (YYYY-MM-DD)
+  // This regex extracts year, month, and day from the date text
+  // Compiled once for better performance instead of creating new regex on each parse
+  private readonly dateRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
 
   // Empty constructor — initialization is triggered from component lifecycle
   constructor() {}
@@ -98,10 +96,10 @@ export class ScrollPopupService implements OnDestroy {
    */
   private setupScrollListener(): void {
     if (this.tableWrapper) {
-      this.tableWrapper.addEventListener('scroll', this.boundScrollHandler, { passive: true });
+      this.tableWrapper.addEventListener('scroll', (e: Event) => this.handleScroll(e), { passive: true });
     } else if (typeof window !== 'undefined') {
       // Fallback to window scroll if table wrapper isn't found
-      window.addEventListener('scroll', this.boundScrollHandler, { passive: true });
+      window.addEventListener('scroll', (e: Event) => this.handleScroll(e), { passive: true });
     }
   }
 
@@ -315,6 +313,7 @@ export class ScrollPopupService implements OnDestroy {
 
   /**
    * Extracts month and year from date text using optimized regex
+   * Parses YYYY-MM-DD format and returns "Jan 2025" style output
    */
   private extractMonthYearFromText(dateText: string): string | null {
     // Use compiled regex for better performance
@@ -424,16 +423,17 @@ export class ScrollPopupService implements OnDestroy {
       clearTimeout(this.scrollTimeout);
     }
 
-    if (this.tableWrapper) {
-      this.tableWrapper.removeEventListener('scroll', this.boundScrollHandler as any);
-    }
-
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('scroll', this.boundScrollHandler as any);
-    }
+    // Note: Inline event handlers are automatically cleaned up when elements are destroyed
+    // No need to manually remove them
 
     // Allow re-initialization behavior
     this.firstScrollPrimed = false;
+
+    // Reset cached references to avoid memory leaks across navigations
+    this.isInitialized = false;
+    this.tableWrapper = null;
+    this.tableBody = null;
+    this.rows = [];
   }
 
   /**

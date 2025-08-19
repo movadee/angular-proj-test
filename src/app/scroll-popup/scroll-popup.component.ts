@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ScrollPopupService } from './scroll-popup.service';
 
@@ -97,18 +97,9 @@ import { ScrollPopupService } from './scroll-popup.service';
     }
   `]
 })
-export class ScrollPopupComponent implements OnDestroy {
-  /**
-   * Inject the scroll popup service
-   * This service handles all the scroll logic, positioning, and state management
-   */
-  protected readonly scrollPopupService = inject(ScrollPopupService);
+export class ScrollPopupComponent {
+  // Inject the scroll popup service
+  private readonly scrollPopupService = inject(ScrollPopupService);
 
-  /**
-   * Lifecycle hook called when component is destroyed
-   * Ensures proper cleanup of service resources to prevent memory leaks
-   */
-  ngOnDestroy(): void {
-    this.scrollPopupService.cleanup();
-  }
+  // No need for ngOnDestroy cleanup since service is singleton and component is destroyed with page
 }
