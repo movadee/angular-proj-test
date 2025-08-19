@@ -338,11 +338,14 @@ export class ScrollPopupService implements OnDestroy {
    * Aligns popup to the scrollbar thumb center using correct travel distance
    */
   private updatePosition(): void {
-    if (!this.isInitialized || !this.tableWrapper) return;
+    if (!this.isInitialized) return;
 
-    const scrollTop = (this.tableWrapper as any).scrollTop;
-    const scrollHeight = (this.tableWrapper as any).scrollHeight;
-    const containerHeight = (this.tableWrapper as any).clientHeight;
+    // Prefer the table wrapper; fallback to documentElement/window if not available
+    const el: any = (this.tableWrapper as any) || document.documentElement;
+
+    const scrollTop = el.scrollTop ?? window.scrollY ?? 0;
+    const scrollHeight = el.scrollHeight ?? document.documentElement.scrollHeight ?? 0;
+    const containerHeight = el.clientHeight ?? window.innerHeight;
     const popupHeight = 40;
 
     // Available track height excluding up/down buttons
@@ -361,11 +364,18 @@ export class ScrollPopupService implements OnDestroy {
     const thumbTop = this.scrollbarButtonHeight + (scrollRatio * thumbTravel);
     const thumbCenter = thumbTop + (approxThumbHeight / 2);
 
-    const wrapperRect = this.tableWrapper.getBoundingClientRect();
+    // Compute rect: use wrapper rect if available; otherwise align to viewport right/top
+    let rectTop = 0;
+    let rectRight = window.innerWidth;
+    if (this.tableWrapper) {
+      const wrapperRect = (this.tableWrapper as HTMLElement).getBoundingClientRect();
+      rectTop = wrapperRect.top;
+      rectRight = (wrapperRect as any).right;
+    }
 
-    // Position popup to the right of the wrapper, vertically centered to the thumb
-    let left = (wrapperRect as any).right + 10;
-    let top = wrapperRect.top + thumbCenter - (popupHeight / 2);
+    // Position popup to the right, vertically centered to the thumb
+    let left = rectRight + 10;
+    let top = rectTop + thumbCenter - (popupHeight / 2);
 
     // Boundary checks to ensure popup stays within viewport
     if (top + popupHeight > window.innerHeight) {
