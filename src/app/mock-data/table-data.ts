@@ -32,12 +32,6 @@ const generateRecords = (): TableRow[] => {
   const records: TableRow[] = [];
   let currentDate = new Date('2025-12-31');
 
-  // Month names for date formatting
-  const monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ];
-
   for (let i = 1; i <= 5000; i++) {
     const firstName = FIRST_NAMES[(i - 1) % FIRST_NAMES.length];
     const lastName = LAST_NAMES[(i - 1) % LAST_NAMES.length];
@@ -46,11 +40,8 @@ const generateRecords = (): TableRow[] => {
     const department = DEPARTMENTS[(i - 1) % DEPARTMENTS.length];
     const status = STATUSES[(i - 1) % STATUSES.length];
 
-    // Format date as "Dec 29, 2025" (English format)
-    const month = monthNames[currentDate.getMonth()];
-    const day = currentDate.getDate();
-    const year = currentDate.getFullYear();
-    const date = `${month} ${day}, ${year}`;
+    // Format date as YYYY-MM-DD
+    const date = currentDate.toISOString().split('T')[0];
 
     records.push({
       id: i,

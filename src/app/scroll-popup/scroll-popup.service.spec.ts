@@ -63,9 +63,9 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 		// Default rows - first invisible (above wrapper), second visible at wrapper top
 		mockTableBody.querySelectorAll.mockReturnValue([
-			row(50, 'Jan 12, 2024'),
-			row(100, 'Feb 5, 2024'),
-			row(150, 'Mar 20, 2024')
+			row(50, '2024-01-12'),
+			row(100, '2024-02-05'),
+			row(150, '2024-03-20')
 		]);
 
 		Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
@@ -138,26 +138,26 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 	});
 
 	describe('month/year extraction', () => {
-		it('parses month name format into month + year (removing day)', () => {
-			expect((service as any).extractMonthYearFromText('Jan 1, 2024')).toBe('Jan 2024');
-			expect((service as any).extractMonthYearFromText('Dec 31, 2024')).toBe('Dec 2024');
+		it('parses YYYY-MM-DD into abbreviated month + year', () => {
+			expect((service as any).extractMonthYearFromText('2024-01-01')).toBe('Jan 2024');
+			expect((service as any).extractMonthYearFromText('2024-12-31')).toBe('Dec 2024');
 			expect((service as any).extractMonthYearFromText('bad')).toBeNull();
 		});
 
 		it('handles all month variations correctly', () => {
 			const testCases = [
-				{ input: 'Jan 1, 2024', expected: 'Jan 2024' },
-				{ input: 'Feb 15, 2024', expected: 'Feb 2024' },
-				{ input: 'Mar 20, 2024', expected: 'Mar 2024' },
-				{ input: 'Apr 10, 2024', expected: 'Apr 2024' },
-				{ input: 'May 25, 2024', expected: 'May 2024' },
-				{ input: 'Jun 30, 2024', expected: 'Jun 2024' },
-				{ input: 'Jul 5, 2024', expected: 'Jul 2024' },
-				{ input: 'Aug 12, 2024', expected: 'Aug 2024' },
-				{ input: 'Sep 18, 2024', expected: 'Sep 2024' },
-				{ input: 'Oct 22, 2024', expected: 'Oct 2024' },
-				{ input: 'Nov 8, 2024', expected: 'Nov 2024' },
-				{ input: 'Dec 31, 2024', expected: 'Dec 2024' }
+				{ input: '2024-01-01', expected: 'Jan 2024' },
+				{ input: '2024-02-15', expected: 'Feb 2024' },
+				{ input: '2024-03-20', expected: 'Mar 2024' },
+				{ input: '2024-04-10', expected: 'Apr 2024' },
+				{ input: '2024-05-25', expected: 'May 2024' },
+				{ input: '2024-06-30', expected: 'Jun 2024' },
+				{ input: '2024-07-05', expected: 'Jul 2024' },
+				{ input: '2024-08-12', expected: 'Aug 2024' },
+				{ input: '2024-09-18', expected: 'Sep 2024' },
+				{ input: '2024-10-22', expected: 'Oct 2024' },
+				{ input: '2024-11-08', expected: 'Nov 2024' },
+				{ input: '2024-12-31', expected: 'Dec 2024' }
 			];
 
 			testCases.forEach(({ input, expected }) => {
@@ -165,42 +165,18 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 			});
 		});
 
-		it('handles French month abbreviations correctly', () => {
-			const frenchTestCases = [
-				{ input: 'Fév 15, 2024', expected: 'Fév 2024' },
-				{ input: 'Avr 10, 2024', expected: 'Avr 2024' },
-				{ input: 'Juin 30, 2024', expected: 'Juin 2024' },
-				{ input: 'Juil 5, 2024', expected: 'Juil 2024' },
-				{ input: 'Août 12, 2024', expected: 'Août 2024' },
-				{ input: 'Déc 31, 2024', expected: 'Déc 2024' }
-			];
-
-			frenchTestCases.forEach(({ input, expected }) => {
-				expect((service as any).extractMonthYearFromText(input)).toBe(expected);
-			});
-		});
-
-		it('preserves month names as-is (no language conversion)', () => {
-			// English months should remain in English
-			expect((service as any).extractMonthYearFromText('Jan 15, 2024')).toBe('Jan 2024');
-			expect((service as any).extractMonthYearFromText('Dec 31, 2024')).toBe('Dec 2024');
-
-			// French months should remain in French
-			expect((service as any).extractMonthYearFromText('Jan 15, 2024')).toBe('Jan 2024');
-			expect((service as any).extractMonthYearFromText('Déc 31, 2024')).toBe('Déc 2024');
-		});
-
 		it('rejects invalid date formats with strict validation', () => {
 			const invalidDates = [
 				'invalid-date',
-				'Jan/15/2024',
-				'Jan 32, 2024',
-				'Jan 0, 2024',
-				'Jan 15, 999',
-				'Jan 15, 10000',
-				'Jan, 2024',
-				'Jan 15',
-				'Jan',
+				'2024/03/15',
+				'2024-13-01',
+				'2024-00-15',
+				'2024-3-15',
+				'2024-03-1',
+				'2024-03-',
+				'2024-03',
+				'2024-',
+				'2024',
 				'',
 				null,
 				undefined
@@ -211,10 +187,10 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 			});
 		});
 
-		it('handles edge case day numbers', () => {
-			expect((service as any).extractMonthYearFromText('Jan 0, 2024')).toBeNull();
-			expect((service as any).extractMonthYearFromText('Jan 32, 2024')).toBeNull();
-			expect((service as any).extractMonthYearFromText('Jan 99, 2024')).toBeNull();
+		it('handles edge case month numbers', () => {
+			expect((service as any).extractMonthYearFromText('2024-00-15')).toBeNull();
+			expect((service as any).extractMonthYearFromText('2024-13-15')).toBeNull();
+			expect((service as any).extractMonthYearFromText('2024-99-15')).toBeNull();
 		});
 
 		it('updates from first visible row', () => {
@@ -225,7 +201,7 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 		});
 
 		it('extracts date from DOM elements with strict expectations', () => {
-			const mockDateCell = { textContent: 'May 20, 2024' };
+			const mockDateCell = { textContent: '2024-05-20' };
 			const mockRow = {
 				querySelector: jest.fn().mockReturnValue(mockDateCell)
 			};
@@ -260,7 +236,7 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 		});
 
 		it('handles single row scenarios', () => {
-			const singleRow = [row(100, 'Jan 1, 2024')];
+			const singleRow = [row(100, '2024-01-01')];
 			jest.spyOn(Array, 'from').mockReturnValue(singleRow);
 
 			const result = (service as any).findFirstVisibleRow();
@@ -269,8 +245,8 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 		it('handles all rows above wrapper correctly', () => {
 			const hiddenRows = [
-				row(50, 'Jan 1, 2024'),
-				row(75, 'Feb 1, 2024')
+				row(50, '2024-01-01'),
+				row(75, '2024-02-01')
 			];
 			jest.spyOn(Array, 'from').mockReturnValue(hiddenRows);
 
@@ -280,8 +256,8 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 		it('handles all rows below wrapper correctly', () => {
 			const visibleRows = [
-				row(200, 'Jan 1, 2024'),
-				row(250, 'Feb 1, 2024')
+				row(200, '2024-01-01'),
+				row(250, '2024-02-01')
 			];
 			jest.spyOn(Array, 'from').mockReturnValue(visibleRows);
 
@@ -297,11 +273,9 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 		it('performance with large datasets', () => {
 			// Create 1000 mock rows
-			const largeMockRows = Array.from({ length: 1000 }, (_, i) => {
-				const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-				const month = monthNames[i % 12];
-				return row(100 + i * 2, `${month} 1, 2024`);
-			});
+			const largeMockRows = Array.from({ length: 1000 }, (_, i) =>
+				row(100 + i * 2, `2024-${String(i % 12 + 1).padStart(2, '0')}-01`)
+			);
 
 			jest.spyOn(Array, 'from').mockReturnValue(largeMockRows);
 
@@ -419,13 +393,8 @@ describe('ScrollPopupService (Spectator + Jest)', () => {
 
 	describe('initial date setting', () => {
 		it('sets initial date when valid', () => {
-			service.setInitialDate('Jun 15, 2024');
+			service.setInitialDate('2024-06-15');
 			expect(service.monthYear()).toBe('Jun 2024');
-		});
-
-		it('sets initial date in French when valid', () => {
-			service.setInitialDate('Juin 15, 2024');
-			expect(service.monthYear()).toBe('Juin 2024');
 		});
 
 		it('ignores invalid initial date', () => {
